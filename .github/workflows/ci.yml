@@ -1,0 +1,17 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y verilator make g++
+      - name: Run smoke sim
+        run: |
+          make -C sim run
