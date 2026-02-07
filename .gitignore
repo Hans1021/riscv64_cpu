@@ -1,0 +1,13 @@
+# build outputs
+obj_dir/
+*.vcd
+*.fst
+*.log
+*.o
+*.a
+*.so
+*.exe
+
+# editor/OS
+.vscode/
+.DS_Store
