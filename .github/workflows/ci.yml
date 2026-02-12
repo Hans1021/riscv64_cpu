@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  smoke:
+  sim:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,6 +12,6 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y verilator make g++
-      - name: Run smoke sim
+      - name: Build and run bus tests
         run: |
           make -C sim run
