@@ -1,0 +1,15 @@
+0080006f00500093
+0010007300108093
+
+
+/* 
+
+addi x1, x0, 5
+
+jal x0, +8 (skips next inst)
+
+addi x1, x1, 1 (skipped)
+
+ebreak (halts)
+
+*/

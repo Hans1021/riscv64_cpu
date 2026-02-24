@@ -24,21 +24,8 @@ module regfile (
     end
 
     always_comb begin
-        if (rd_we && rd_addr != 0 && rd_addr == rs1_addr) begin
-            rs1_data = rd_wdata;
-        end else if (rs1_addr == 0) begin
-            rs1_data = 64'b0;
-        end else begin
-            rs1_data = regs[rs1_addr];
-        end
-
-        if (rd_we && rd_addr != 0 && rd_addr == rs2_addr) begin
-            rs2_data = rd_wdata;
-        end else if (rs2_addr == 0) begin
-            rs2_data = 64'b0;
-        end else begin
-            rs2_data = regs[rs2_addr];
-        end
+        rs1_data = (rs1_addr == 0) ? 64'b0 : regs[rs1_addr];
+        rs2_data = (rs2_addr == 0) ? 64'b0 : regs[rs2_addr];
     end
 
 

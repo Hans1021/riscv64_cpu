@@ -24,15 +24,26 @@ module ram #(
     localparam int IDX_W = $clog2(DEPTH_WORDS);
 
     logic [63:0] mem [0:DEPTH_WORDS-1];
+    
+    // Load program
+
+    string memfile;
+
+    initial begin
+        if ($value$plusargs("mem=%s", memfile)) begin
+            $display("RAM: loading hex from %s", memfile);
+            $readmemh(memfile, mem);
+            $display("RAM: mem[0]=%h mem[1]=%h", mem[0], mem[1]);
+        end else begin
+            $display("RAM: no +mem=<file> provided; memory uninitialized");
+        end
+    end
 
     logic bad_align;
     assign bad_align = |req_addr[2:0];
 
     logic [IDX_W-1:0] idx;
     assign idx = req_addr[ADDR_LSB + IDX_W - 1 : ADDR_LSB];
-
-    logic unused_addr_hi;
-    assign unused_addr_hi = |req_addr[63 : (ADDR_LSB + IDX_W)];
 
     // Pipeline regs for 1-cycle response
     logic        pend_q;

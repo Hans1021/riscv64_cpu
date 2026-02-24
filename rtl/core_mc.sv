@@ -31,6 +31,7 @@ module core_mc #(
 
     logic [63:0] pc_q;
     logic [31:0] ir_q;
+    logic        fetch_hi_q;
 
     assign dbg_pc = pc_q;
     assign dbg_ir = ir_q;
@@ -136,10 +137,14 @@ module core_mc #(
         // next state default
         state_d = state_q;
 
+        if (state_q == S_RESET) begin
+            state_d = S_FETCH_REQ;
+        end
+
         if (state_q == S_FETCH_REQ) begin
             // Instruction fetch request (64-bit read)
             req_valid    = 1'b1;
-            req_addr     = pc_q;
+            req_addr = {pc_q[63:3], 3'b000};
             req_is_write = 1'b0;
             req_wstrb    = 8'b0;
             if (req_ready) begin
@@ -147,7 +152,11 @@ module core_mc #(
             end
         end else if (state_q == S_FETCH_RESP) begin
             if (resp_valid) begin
-                state_d = S_DECODE;
+                if (resp_err) begin
+                    state_d = S_HALT;
+                end else begin
+                    state_d = S_DECODE;
+                end
             end
         end else if (state_q == S_DECODE) begin
             if (is_addi)       state_d = S_EXEC_ADDI;
@@ -178,8 +187,14 @@ module core_mc #(
             pc_q    <= RESET_PC;
             ir_q    <= 32'b0;
             halted  <= 1'b0;
+            fetch_hi_q <= 1'b0;
         end else begin
             state_q <= state_d;
+
+            // Latch which half of the 64-bit fetch word based on PC[2]
+            if (state_q == S_FETCH_REQ && req_valid && req_ready) begin
+                fetch_hi_q <= pc_q[2];
+            end
 
             if (state_d == S_HALT) halted <= 1'b1;
 
@@ -188,17 +203,15 @@ module core_mc #(
                 S_RESET: begin
                     pc_q   <= RESET_PC;
                     halted <= 1'b0;
-                    state_q <= S_FETCH_REQ; // immediate start after reset release
+                    fetch_hi_q <= 1'b0;
                 end
 
                 S_FETCH_RESP: begin
                     if (resp_valid) begin
                         if (resp_err) begin
-                            // bus error on fetch: halt
                             halted <= 1'b1;
-                            state_q <= S_HALT;
                         end else begin
-                            ir_q <= resp_rdata[31:0];
+                            ir_q <= fetch_hi_q ? resp_rdata[63:32] : resp_rdata[31:0];
                         end
                     end
                 end
