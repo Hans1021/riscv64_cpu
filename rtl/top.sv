@@ -1,3 +1,5 @@
+`default_nettype wire
+
 module top (
     input  logic        clk,
     input  logic        reset,
@@ -41,3 +43,5 @@ module top (
     );
 
 endmodule
+
+`default_nettype wire

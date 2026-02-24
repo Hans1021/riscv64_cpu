@@ -1,3 +1,5 @@
+`default_nettype none
+
 module ram #(
     parameter int DEPTH_WORDS = 131072
 ) (
@@ -38,7 +40,6 @@ module ram #(
     logic        rd_q;
     logic [IDX_W-1:0] rd_idx_q;
 
-    // Always ready
     assign req_ready = !resp_valid && !pend_q;
 
     logic req_fire;
@@ -90,3 +91,5 @@ module ram #(
 
     
 endmodule
+
+`default_nettype wire

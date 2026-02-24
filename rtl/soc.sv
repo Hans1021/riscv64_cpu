@@ -1,3 +1,5 @@
+`default_nettype none
+
 module soc #(
     parameter logic [63:0] RAM_BASE      = 64'h0000_0000_8000_0000,
     parameter logic [63:0] RAM_SIZE_BYTES = 64'h0000_0000_0010_0000,
@@ -109,3 +111,5 @@ module soc #(
     );
 
 endmodule
+
+`default_nettype wire
