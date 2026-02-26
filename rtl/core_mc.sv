@@ -43,23 +43,26 @@ module core_mc #(
     logic [4:0]  rd, rs1, rs2;
     logic [2:0]  funct3;
     logic [6:0]  funct7;
-    logic [63:0] imm_i, imm_j;
+    logic [63:0] imm_i, imm_s, imm_b, imm_u, imm_j;
     logic        is_addi, is_jal, is_ebreak, illegal;
 
     decoder u_dec (
-        .inst     (ir_q),
-        .opcode   (opcode),
-        .rd       (rd),
-        .funct3   (funct3),
-        .rs1      (rs1),
-        .rs2      (rs2),
-        .funct7   (funct7),
-        .imm_i    (imm_i),
-        .imm_j    (imm_j),
-        .is_addi  (is_addi),
-        .is_jal   (is_jal),
-        .is_ebreak(is_ebreak),
-        .illegal  (illegal)
+        .inst       (ir_q),
+        .opcode     (opcode),
+        .rd         (rd),
+        .funct3     (funct3),
+        .rs1        (rs1),
+        .rs2        (rs2),
+        .funct7     (funct7),
+        .imm_i      (imm_i),
+        .imm_s      (imm_s),
+        .imm_b      (imm_b),
+        .imm_u      (imm_u),
+        .imm_j      (imm_j),
+        .is_addi    (is_addi),
+        .is_jal     (is_jal),
+        .is_ebreak  (is_ebreak),
+        .illegal    (illegal)
     );
 
     // ----------------------------
@@ -71,15 +74,15 @@ module core_mc #(
     logic [63:0] rs1_data, rs2_data;
 
     regfile u_rf (
-        .clk      (clk),
-        .reset    (reset),
-        .rs1_addr (rs1),
-        .rs2_addr (rs2),
-        .rd_we    (rf_we),
-        .rd_addr  (rf_waddr),
-        .rd_wdata (rf_wdata),
-        .rs1_data (rs1_data),
-        .rs2_data (rs2_data)
+        .clk        (clk),
+        .reset      (reset),
+        .rs1_addr   (rs1),
+        .rs2_addr   (rs2),
+        .rd_we      (rf_we),
+        .rd_addr    (rf_waddr),
+        .rd_wdata   (rf_wdata),
+        .rs1_data   (rs1_data),
+        .rs2_data   (rs2_data)
     );
 
     // ----------------------------
