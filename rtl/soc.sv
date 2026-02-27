@@ -56,7 +56,7 @@ module soc #(
 
     // CPU request is accepted either by RAM (ram_sel) or by unmapped handler (!ram_sel)
     // Single-outstanding: SoC must not accept new req if it is holding an unmapped response.
-    assign req_ready = (!unmapped_resp_valid) && (ram_sel ? ram_req_ready : 1'b1);
+    assign req_ready = (!unmapped_resp_valid) && ram_req_ready;
 
     logic req_fire;
     assign req_fire = req_valid && req_ready;

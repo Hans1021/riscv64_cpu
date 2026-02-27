@@ -30,15 +30,24 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 5; i++) tick(dut, tfp, t);
     dut->reset = 0;
 
-    const int MAX_CYCLES = 500;
+    const int MAX_CYCLES = 50000;
     for (int i = 0; i < MAX_CYCLES; i++) {
         tick(dut, tfp, t);
 
+        if ((i % 50) == 0) {
+        VL_PRINTF("i=%d pc=0x%016llx ir=0x%08x state=%u halted=%u\n",
+              i,
+              (unsigned long long)dut->dbg_pc,
+              (unsigned)dut->dbg_ir,
+              (unsigned)dut->dbg_state,
+              (unsigned)dut->halted);
+        }
+
         if (dut->halted) {
             VL_PRINTF("HALT at pc=0x%016llx ir=0x%08x state=%u\n",
-                      (unsigned long long)dut->dbg_pc,
-                      (unsigned)dut->dbg_ir,
-                      (unsigned)dut->dbg_state);
+                        (unsigned long long)dut->dbg_pc,
+                        (unsigned)dut->dbg_ir,
+                        (unsigned)dut->dbg_state);
 
             tfp->close();
             delete tfp;
@@ -48,9 +57,9 @@ int main(int argc, char** argv) {
     }
 
     VL_PRINTF("TIMEOUT: did not halt. pc=0x%016llx ir=0x%08x state=%u\n",
-              (unsigned long long)dut->dbg_pc,
-              (unsigned)dut->dbg_ir,
-              (unsigned)dut->dbg_state);
+                (unsigned long long)dut->dbg_pc,
+                (unsigned)dut->dbg_ir,
+                (unsigned)dut->dbg_state);
 
     tfp->close();
     delete tfp;

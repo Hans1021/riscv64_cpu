@@ -33,21 +33,17 @@ module ram #(
         if ($value$plusargs("mem=%s", memfile)) begin
             $display("RAM: loading hex from %s", memfile);
             $readmemh(memfile, mem);
-            $display("RAM: mem[0]=%h mem[1]=%h", mem[0], mem[1]);
+            $display("%h", mem[0]);
         end else begin
             $display("RAM: no +mem=<file> provided; memory uninitialized");
         end
     end
-
-    logic bad_align;
-    assign bad_align = |req_addr[2:0];
 
     logic [IDX_W-1:0] idx;
     assign idx = req_addr[ADDR_LSB + IDX_W - 1 : ADDR_LSB];
 
     // Pipeline regs for 1-cycle response
     logic        pend_q;
-    logic        err_q;
     logic        rd_q;
     logic [IDX_W-1:0] rd_idx_q;
 
@@ -62,7 +58,6 @@ module ram #(
             resp_rdata <= 64'b0;
             resp_err   <= 1'b0;
             pend_q     <= 1'b0;
-            err_q      <= 1'b0;
             rd_q       <= 1'b0;
             rd_idx_q   <= '0;
         end else begin
@@ -74,13 +69,14 @@ module ram #(
 
             // Launch a request (only when resp_valid=0 due to req_ready)
             if (req_fire) begin
-                err_q    <= bad_align;
-                rd_q     <= !req_is_write && !bad_align;
+                rd_q     <= !req_is_write;
                 rd_idx_q <= idx;
-                pend_q   <= 1'b1;
+
+                // Only generate a response for reads
+                pend_q   <= !req_is_write;
 
                 // Perform write immediately (still respond next cycle)
-                if (req_is_write && !bad_align) begin
+                if (req_is_write) begin
                     for (int b = 0; b < 8; b++) begin
                         if (req_wstrb[b]) begin
                             mem[idx][8*b +: 8] <= req_wdata[8*b +: 8];
@@ -94,8 +90,8 @@ module ram #(
             // Generate response one cycle after req_fire
             if (pend_q) begin
                 resp_valid <= 1'b1;
-                resp_err   <= err_q;
-                resp_rdata <= (rd_q) ? mem[rd_idx_q] : 64'b0;
+                resp_err   <= 1'b0;
+                resp_rdata <= mem[rd_idx_q];
             end
         end
     end
