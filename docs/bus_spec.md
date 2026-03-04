@@ -16,7 +16,4 @@
 - `resp_rdata[63:0]`: read data
 - `resp_err`: error indicator
 
-Require naturally aligned access (8-byte for 64-bit).
-Misaligned can set `resp_error = 1`
-
 Instruction fetch behavior: 64-bit aligned read + halfway select

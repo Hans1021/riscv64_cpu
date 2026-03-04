@@ -8,7 +8,7 @@ M3: Core, decoder, alu (with just add), regfile + Simple hex program loaded in t
 
 - Supports ADDI, JAL, EBREAK (halts for now)
 
-M4: Split into core_top, control_fsm, exu, frontend, lsu, added riscv_pkg for simplicity. Added tons of instructions, most of RV64I base. (WIP)
+M4: Split into core_top, control_fsm, exu, frontend, lsu, added riscv_pkg for simplicity. Added tons of instructions, most of RV64I base. (Complete)
 
 - Learned how to write in assembly to be converted into hex and loaded into RAM
 

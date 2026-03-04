@@ -1,8 +1,6 @@
-# Milestone 4 (WIP)
+# Milestone 4: Most of RV64I Base (Complete)
 
 TLDR: Improved simple CPU to be able to execute large portion RV64I base and verified its functionality with regression-style test program, assembled into memh and loaded into RAM.
-
----
 
 ## Changelog
 
@@ -76,6 +74,7 @@ In MS3, most of the logic was in `core_mc.sv`. When adding more instructions for
 ### Other Changes
 
 - Added this milestone doc as well as others, changed old one to a summary
+- Added debug doc
 
 ---
 

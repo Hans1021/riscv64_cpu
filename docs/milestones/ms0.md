@@ -1,4 +1,4 @@
-# Milestone 0 (Complete)
+# Milestone 0: Project Setup (Complete)
 
 ## Set up a repo
 
