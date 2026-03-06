@@ -1,4 +1,5 @@
 name: ci
+
 on:
   push:
   pull_request:
@@ -6,12 +7,15 @@ on:
 jobs:
   sim:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y verilator make g++
+          sudo apt install -y verilator make g++ gcc-riscv64-unknown-elf
+
       - name: Build and run CPU test
         run: |
-          make -C sim run
+          make

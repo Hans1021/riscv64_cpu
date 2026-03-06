@@ -1,6 +1,7 @@
 TOP := top
 RTL_DIR := ../rtl
 SIM_DIR := .
+SW_DIR := ../sw
 
 RTL_SRCS := \
   $(RTL_DIR)/riscv_pkg.sv \
@@ -17,17 +18,19 @@ RTL_SRCS := \
   $(RTL_DIR)/top.sv
 
 # Program location
-MEM ?= ../sw/out/rv64_test.memh
+MEM ?= ../sw/out/prog.memh
+
+sw:
+	$(MAKE) -C $(SW_DIR)
 
 build:
 	verilator -Wall --cc $(RTL_SRCS) --top-module $(TOP) \
 		--exe $(SIM_DIR)/main.cpp --trace -Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY
-	make -C obj_dir -f V$(TOP).mk
+	$(MAKE) -C obj_dir -f V$(TOP).mk
 
-run: build
+run: sw build
 	./obj_dir/V$(TOP) +mem=$(MEM)
-
-test_core_smoke: run
 
 clean:
 	rm -rf obj_dir dump.vcd
+	$(MAKE) -C $(SW_DIR) clean

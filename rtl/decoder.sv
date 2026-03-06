@@ -63,26 +63,26 @@ module decoder (
 
         // SYSTEM (ECALL/EBREAK only)
         if (opcode_i == 7'b1110011) begin
-        if (funct3_i == 3'b000 && rd_i == 5'd0 && rs1_i == 5'd0) begin
-            if (inst_i[31:20] == 12'h000) begin
-            c.kind     = IK_SYSTEM;
-            c.is_ecall = 1'b1;
-            end else if (inst_i[31:20] == 12'h001) begin
-            c.kind      = IK_SYSTEM;
-            c.is_ebreak = 1'b1;
+            if (funct3_i == 3'b000 && rd_i == 5'd0 && rs1_i == 5'd0) begin
+                if (inst_i[31:20] == 12'h000) begin
+                c.kind     = IK_SYSTEM;
+                c.is_ecall = 1'b1;
+                end else if (inst_i[31:20] == 12'h001) begin
+                c.kind      = IK_SYSTEM;
+                c.is_ebreak = 1'b1;
+                end
             end
-        end
         end
 
         // FENCE (legal NOP for now)
         else if (opcode_i == 7'b0001111) begin
-        if (funct3_i == 3'b000 || funct3_i == 3'b001) begin
-            // legal, no register write, just advance PC
-            c.kind      = IK_SYSTEM;
-            c.is_fence  = 1'b1;
-            c.reg_write = 1'b0;
-            c.pc_sel    = PC_PC4;
-        end
+            if (funct3_i == 3'b000 || funct3_i == 3'b001) begin
+                // legal, no register write, just advance PC
+                c.kind      = IK_SYSTEM;
+                c.is_fence  = 1'b1;
+                c.reg_write = 1'b0;
+                c.pc_sel    = PC_PC4;
+            end
         end
 
         // LUI: rd = imm_u

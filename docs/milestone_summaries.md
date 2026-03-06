@@ -12,4 +12,4 @@ M4: Split into core_top, control_fsm, exu, frontend, lsu, added riscv_pkg for si
 
 - Learned how to write in assembly to be converted into hex and loaded into RAM
 
-M5: ...
+M5: Runs bare-metal C with similar tests to M4. (Complete)

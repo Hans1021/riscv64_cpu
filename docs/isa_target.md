@@ -2,7 +2,6 @@
 
 - Target ISA: RV64I
 
-
 ## Current Instructions
 
 ### Integer ALU (OP / OP-IMM)

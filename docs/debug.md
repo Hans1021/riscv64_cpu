@@ -7,6 +7,7 @@ Note: only sticky bugs (>30 minutes) logged
 ### Issue 1: Verilator `UNOPTFLAT` circular combinational logic on `top.req_ready`
 
 #### Date
+
 2026-02-26
 
 #### Description
@@ -18,6 +19,7 @@ Note: only sticky bugs (>30 minutes) logged
   - `req_ready` was computed combinationally based on address decode (`ram_sel` depends on `req_addr`), while `req_addr` was computed based on logic that depended on `req_ready`
 
 #### Fix
+
 - Originally thought issue was in `lsu` or `control_fsm`
   - Changes did not solve warning, only moved the loop somewhere else
 - Final fix:
@@ -29,6 +31,7 @@ Note: only sticky bugs (>30 minutes) logged
 ### Issue 2: Sim timeout with PC/IR mismatch
 
 #### Date
+
 2026-02-27
 
 #### Description

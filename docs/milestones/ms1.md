@@ -1,17 +1,19 @@
 # Milestone 1: Smoke Sim (Complete)
 
 ## Added
+
 - `top.sv`
-    - Simple sequential counter to verifying clocking and reset
+  - Simple sequential counter to verifying clocking and reset
 - `main.cpp` testbench
-    - Toggles clock and reset
-    - dumps `dump.vdc` to check with GTKWave
+  - Toggles clock and reset
+  - dumps `dump.vdc` to check with GTKWave
 - CI
-    - GitHub Action job installs Verilator and compiler
-    - Runs smoke test
+  - GitHub Action job installs Verilator and compiler
+- Runs smoke test
 
 ## How to run
+
 - Build and run:
-    - `make -C sim run`
+  - `make -C sim run`
 - View waveform:
-    - `gtkwave sim/sump.vcd`
+  - `gtkwave sim/sump.vcd`

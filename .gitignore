@@ -1,13 +1,19 @@
-# build outputs
-obj_dir/
-*.vcd
-*.fst
-*.log
-*.o
-*.a
-*.so
-*.exe
+sw/out/
 
-# editor/OS
-.vscode/
+sim/obj_dir/
+sim/*.vcd
+sim/*.fst
+
+*.o
+*.elf
+*.memh
+*.map
+*.dis
+
 .DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+__pycache__/
