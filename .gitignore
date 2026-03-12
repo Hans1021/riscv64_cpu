@@ -1,4 +1,5 @@
-sw/out/
+sw/asm/out/
+sw/bare_metal_c/out/
 
 sim/obj_dir/
 sim/*.vcd

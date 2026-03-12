@@ -4,7 +4,7 @@ module control_fsm (
     input  logic        clk,
     input  logic        reset,
 
-    // Unified bus (core -> SoC)
+    // Unified bus
     output logic        req_valid,
     input  logic        req_ready,
     output logic [63:0] req_addr,
@@ -17,7 +17,7 @@ module control_fsm (
     input  logic [63:0] resp_rdata,
     input  logic        resp_err,
 
-    // Frontend control/status
+    // Frontend
     output logic        if_start,
     input  logic        if_busy,
     input  logic        if_done,
@@ -28,11 +28,11 @@ module control_fsm (
     input  logic [63:0] pc_q,
     input  logic [31:0] ir_q,
 
-    // Frontend bus outputs (for arbitration)
+    // Frontend bus outputs
     input  logic        fe_req_valid,
     input  logic [63:0] fe_req_addr,
 
-    // From decoder (driven by current IR)
+    // From decoder
     input  riscv_pkg::dec_uop_t uop_d,
     input  logic [4:0]          rd_d,
     input  logic [4:0]          rs1_d,
@@ -72,17 +72,17 @@ module control_fsm (
     state_t st_q, st_d;
     assign dbg_state = st_q;
 
-    // latch decoded bundle
+    // Latch decoded bundle
     dec_uop_t uop_q;
     logic [4:0]  rd_q_l, rs1_q_l, rs2_q_l;
     logic [63:0] imm_i_q, imm_s_q, imm_b_q, imm_u_q, imm_j_q;
 
-    // regfile read addrs from current IR
+    // Regfile read addrs from current IR
     assign rf_rs1_addr = rs1_d;
     assign rf_rs2_addr = rs2_d;
 
     // EXU
-    logic [63:0] exu_alu_y;
+    logic [63:0] exu_y;
     logic        exu_br_take;
     logic [63:0] exu_jalr_target;
 
@@ -94,7 +94,7 @@ module control_fsm (
         .imm_s       (imm_s_q),
         .imm_u       (imm_u_q),
         .uop         (uop_q),
-        .alu_y       (exu_alu_y),
+        .exu_y       (exu_y),
         .br_take     (exu_br_take),
         .jalr_target (exu_jalr_target)
     );
@@ -141,9 +141,7 @@ module control_fsm (
         .resp_err     (resp_err)
     );
 
-    // ----------------------------
     // Bus arbitration: FE in IFETCH, LSU in MEM, else idle
-    // ----------------------------
     always_comb begin
         req_valid    = 1'b0;
         req_addr     = 64'd0;
@@ -166,24 +164,22 @@ module control_fsm (
         end
     end
 
-    // ----------------------------
     // Control outputs + next state
-    // ----------------------------
     always_comb begin
         st_d   = st_q;
         halted = 1'b0;
 
-        // frontend controls
+        // Frontend controls
         if_start = 1'b0;
         pc_we    = 1'b0;
         pc_next  = pc_q;
 
-        // regfile write defaults
+        // Regfile write defaults
         rf_we    = 1'b0;
         rf_waddr = rd_q_l;
         rf_wdata = 64'd0;
 
-        // lsu defaults
+        // Lsu defaults
         lsu_issue      = 1'b0;
         lsu_is_store   = 1'b0;
         lsu_addr       = 64'd0;
@@ -196,7 +192,7 @@ module control_fsm (
                 st_d = S_IFETCH;
             end
 
-            // Start + wait for frontend fetch to complete
+            // Start and wait for frontend fetch
             S_IFETCH: begin
                 if (!if_busy) if_start = 1'b1;
                 if (if_done) begin
@@ -209,8 +205,10 @@ module control_fsm (
                 if (uop_d.kind == IK_ILLEGAL) begin
                     st_d = S_HALT;
                 end else if (uop_d.kind == IK_SYSTEM) begin
-                    if (uop_d.is_fence) st_d = S_EXEC; // NOP-like
-                    else                st_d = S_HALT; // ECALL/EBREAK now
+                    if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I)
+                    st_d = S_EXEC;
+                else
+                    st_d = S_HALT;
                 end else if (uop_d.kind == IK_LOAD || uop_d.kind == IK_STORE) begin
                     st_d = S_MEM;
                 end else begin
@@ -222,7 +220,7 @@ module control_fsm (
                 if (!lsu_busy) begin
                     lsu_issue      = 1'b1;
                     lsu_is_store   = (uop_q.kind == IK_STORE);
-                    lsu_addr       = exu_alu_y; // rs1 + imm_i/imm_s
+                    lsu_addr       = exu_y;
                     lsu_store_data = rf_rs2_data;
                     lsu_size       = uop_q.mem_size;
                     lsu_unsigned   = uop_q.mem_unsigned;
@@ -248,14 +246,13 @@ module control_fsm (
                     rf_we    = 1'b1;
                     rf_waddr = rd_q_l;
                     unique case (uop_q.wb_sel)
-                        WB_ALU:   rf_wdata = exu_alu_y;
+                        WB_EXU:   rf_wdata = exu_y;
                         WB_PC4:   rf_wdata = pc_q + 64'd4;
-                        WB_IMM_U: rf_wdata = imm_u_q;
                         default:  rf_wdata = 64'd0;
                     endcase
                 end
 
-                // compute next PC and commit to frontend
+                // compute next PC
                 pc_we = 1'b1;
                 unique case (uop_q.pc_sel)
                     PC_PC4: pc_next = pc_q + 64'd4;
@@ -272,7 +269,7 @@ module control_fsm (
 
                     PC_ALU: begin
                         if (uop_q.kind == IK_JALR) pc_next = exu_jalr_target;
-                        else                       pc_next = exu_alu_y;
+                        else                       pc_next = exu_y;
                     end
 
                     default: pc_next = pc_q + 64'd4;
@@ -290,9 +287,7 @@ module control_fsm (
         endcase
     end
 
-    // ----------------------------
     // Sequential: latch decode bundle
-    // ----------------------------
     always_ff @(posedge clk) begin
         if (reset) begin
             st_q    <= S_RESET;

@@ -7,20 +7,20 @@ module frontend #(
     input  logic        reset,
 
     // Control from FSM
-    input  logic        if_start,        // pulse to start a fetch at current PC
+    input  logic        if_start,           // pulse to start a fetch at current PC
     output logic        if_busy,
-    output logic        if_done,          // 1-cycle pulse when IR updated
-    output logic        if_err,           // 1-cycle pulse aligned with if_done when resp_err
+    output logic        if_done,            // 1-cycle pulse when IR updated
+    output logic        if_err,             // 1-cycle pulse aligned with if_done when resp_err
 
     // PC update from FSM (applied after execute)
     input  logic        pc_we,
     input  logic [63:0] pc_next,
 
-    // Architectural state
+    // States
     output logic [63:0] pc_q,
     output logic [31:0] ir_q,
 
-    // Unified bus (frontend drives when busy)
+    // Unified bus
     output logic        req_valid,
     input  logic        req_ready,
     output logic [63:0] req_addr,
@@ -33,7 +33,7 @@ module frontend #(
     input  logic        resp_err
 );
 
-    // Always read-only for frontend
+    // Read-only for frontend
     assign req_is_write = 1'b0;
     assign req_wdata    = 64'd0;
     assign req_wstrb    = 8'd0;
@@ -43,7 +43,6 @@ module frontend #(
 
     logic fetch_hi_q;
 
-    // outputs
     always_comb begin
         req_valid = 1'b0;
         req_addr  = {pc_q[63:3], 3'b000};
@@ -81,7 +80,6 @@ module frontend #(
         endcase
     end
 
-    // state + latches
     always_ff @(posedge clk) begin
         if (reset) begin
             fs_q       <= F_IDLE;
@@ -101,7 +99,7 @@ module frontend #(
                 fetch_hi_q <= pc_q[2];
             end
 
-            // latch IR on response (if no error)
+            // latch IR on response
             if (fs_q == F_WAIT && resp_valid && !resp_err) begin
                 ir_q <= fetch_hi_q ? resp_rdata[63:32] : resp_rdata[31:0];
             end

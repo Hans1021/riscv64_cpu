@@ -42,7 +42,7 @@ module ram #(
     logic [IDX_W-1:0] idx;
     assign idx = req_addr[ADDR_LSB + IDX_W - 1 : ADDR_LSB];
 
-    // Pipeline regs for 1-cycle response
+    // For 1-cycle response
     logic        pend_q;
     logic        rd_q;
     logic [IDX_W-1:0] rd_idx_q;
@@ -61,21 +61,20 @@ module ram #(
             rd_q       <= 1'b0;
             rd_idx_q   <= '0;
         end else begin
-            // Default: if response is accepted, drop it
+            // Default: drop if response is accepted
             if (resp_valid && resp_ready) begin
                 resp_valid <= 1'b0;
                 resp_err   <= 1'b0;
             end
 
-            // Launch a request (only when resp_valid=0 due to req_ready)
+            // Launch request
             if (req_fire) begin
                 rd_q     <= !req_is_write;
                 rd_idx_q <= idx;
 
-                // Only generate a response for reads
                 pend_q   <= !req_is_write;
 
-                // Perform write immediately (still respond next cycle)
+                // Write immediately
                 if (req_is_write) begin
                     for (int b = 0; b < 8; b++) begin
                         if (req_wstrb[b]) begin
@@ -87,7 +86,7 @@ module ram #(
                 pend_q <= 1'b0;
             end
 
-            // Generate response one cycle after req_fire
+            // Respond one cycle after req_fire
             if (pend_q) begin
                 resp_valid <= 1'b1;
                 resp_err   <= 1'b0;

@@ -22,7 +22,6 @@ module top (
     logic [63:0] resp_rdata;
     logic        resp_err;
 
-    // Core
     core_top u_core (
         .clk          (clk),
         .reset        (reset),
@@ -45,7 +44,6 @@ module top (
         .dbg_state    (dbg_state)
     );
 
-    // SoC + RAM
     soc u_soc (
         .clk          (clk),
         .reset        (reset),

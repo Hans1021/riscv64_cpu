@@ -1,14 +1,14 @@
 `default_nettype none
 
 module soc #(
-    parameter logic [63:0] RAM_BASE      = 64'h0000_0000_8000_0000,
-    parameter logic [63:0] RAM_SIZE_BYTES = 64'h0000_0000_0010_0000,
-    parameter int          RAM_DEPTH_WORDS = 131072
+    parameter logic [63:0] RAM_BASE         = 64'h0000_0000_8000_0000,
+    parameter logic [63:0] RAM_SIZE_BYTES   = 64'h0000_0000_0010_0000,
+    parameter int          RAM_DEPTH_WORDS  = 131072
 ) (
     input  logic        clk,
     input  logic        reset,
 
-    // CPU (master) <-> SoC (slave) bus
+    // CPU <-> SoC bus
     input  logic        req_valid,
     output logic        req_ready,
     input  logic [63:0] req_addr,
@@ -26,12 +26,11 @@ module soc #(
     logic ram_sel;
     assign ram_sel = (req_addr >= RAM_BASE) && (req_addr < (RAM_BASE + RAM_SIZE_BYTES));
 
-    // Translate to RAM-local address (offset)
     logic [63:0] ram_addr;
     assign ram_addr = req_addr - RAM_BASE;
 
 
-    // RAM device bus wires
+    // RAM wires
     logic        ram_req_valid, ram_req_ready;
     logic [63:0] ram_req_addr;
     logic        ram_req_is_write;
@@ -51,17 +50,14 @@ module soc #(
 
     assign ram_resp_ready   = resp_ready; // if response is from RAM
 
-    // Unmapped address handling (SoC-generated error response)
     logic unmapped_resp_valid;
 
-    // CPU request is accepted either by RAM (ram_sel) or by unmapped handler (!ram_sel)
-    // Single-outstanding: SoC must not accept new req if it is holding an unmapped response.
     assign req_ready = (!unmapped_resp_valid) && ram_req_ready;
 
     logic req_fire;
     assign req_fire = req_valid && req_ready;
 
-    // Generate and hold unmapped error response until accepted
+    // Hold error until accepted
     always_ff @(posedge clk) begin
         if (reset) begin
             unmapped_resp_valid <= 1'b0;
@@ -70,14 +66,13 @@ module soc #(
                 unmapped_resp_valid <= 1'b0;
             end
 
-            // If accepted request not mapped to RAM, create error response
             if (req_fire && !ram_sel) begin
                 unmapped_resp_valid <= 1'b1;
             end
         end
     end
 
-    // Response mux: RAM vs unmapped error
+    // RAM vs unmapped error
     always_comb begin
         if (unmapped_resp_valid) begin
             resp_valid = 1'b1;
@@ -90,10 +85,7 @@ module soc #(
         end
     end
 
-    // Instantiate RAM device
-    ram #(
-        .DEPTH_WORDS(RAM_DEPTH_WORDS)
-    ) u_ram (
+    ram #(.DEPTH_WORDS(RAM_DEPTH_WORDS)) u_ram (
         .clk        (clk),
         .reset      (reset),
 

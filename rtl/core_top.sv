@@ -27,9 +27,7 @@ module core_top #(
 );
     import riscv_pkg::*;
 
-    // ----------------------------
-    // Frontend <-> FSM signals
-    // ----------------------------
+    // Frontend and FSM signals
     logic        if_start, if_busy, if_done, if_err;
     logic        pc_we;
     logic [63:0] pc_next;
@@ -37,7 +35,7 @@ module core_top #(
     logic [63:0] pc_q;
     logic [31:0] ir_q;
 
-    // Frontend bus outputs (for arbitration inside FSM)
+    // Frontend bus outputs
     logic        fe_req_valid;
     logic [63:0] fe_req_addr;
 
@@ -60,7 +58,7 @@ module core_top #(
         .req_ready   (req_ready),
         .req_addr    (fe_req_addr),
         .req_is_write(),        // unused (frontend is read-only)
-        .req_wdata   (),       // unused
+        .req_wdata   (),        // unused
         .req_wstrb   (),        // unused
 
         .resp_valid  (resp_valid),
@@ -68,9 +66,7 @@ module core_top #(
         .resp_err    (resp_err)
     );
 
-    // ----------------------------
     // Decoder
-    // ----------------------------
     logic [6:0]  opcode;
     logic [4:0]  rd, rs1, rs2;
     logic [2:0]  funct3;
@@ -98,9 +94,7 @@ module core_top #(
         .uop    (uop)
     );
 
-    // ----------------------------
     // Regfile
-    // ----------------------------
     logic [4:0]  rf_rs1_addr, rf_rs2_addr;
     logic [63:0] rf_rs1_data, rf_rs2_data;
 
@@ -120,9 +114,7 @@ module core_top #(
         .rs2_data (rf_rs2_data)
     );
 
-    // ----------------------------
-    // Control FSM (arbitrates bus + controls FE/EXU/LSU)
-    // ----------------------------
+    // Control FSM (arbitrates bus and controls FE/EXU/LSU)
     control_fsm u_fsm (
         .clk         (clk),
         .reset       (reset),
@@ -140,7 +132,7 @@ module core_top #(
         .resp_rdata  (resp_rdata),
         .resp_err    (resp_err),
 
-        // Frontend control/status
+        // Frontend
         .if_start    (if_start),
         .if_busy     (if_busy),
         .if_done     (if_done),
@@ -151,7 +143,7 @@ module core_top #(
         .pc_q        (pc_q),
         .ir_q        (ir_q),
 
-        // Frontend bus outputs for arbitration
+        // Frontend bus outputs
         .fe_req_valid(fe_req_valid),
         .fe_req_addr (fe_req_addr),
 

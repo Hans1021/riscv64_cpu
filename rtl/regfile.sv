@@ -13,6 +13,8 @@ module regfile (
 
     logic [63:0] regs [0:31];
 
+    // Reg 0 is always 0
+
     always_ff @(posedge clk) begin
         if (reset) begin
             for (int i = 1; i < 32; i++) begin

@@ -26,9 +26,7 @@ module alu (
 
         unique case (op)
 
-            // ----------------------------
             // 64-bit ops
-            // ----------------------------
             ALU_ADD:  y = a + b;
             ALU_SUB:  y = a - b;
             ALU_AND:  y = a & b;
@@ -42,9 +40,7 @@ module alu (
             ALU_SLT:  y = ($signed(a) < $signed(b)) ? 64'd1 : 64'd0;
             ALU_SLTU: y = (a < b) ? 64'd1 : 64'd0;
 
-            // ----------------------------
-            // RV64 "W" ops: compute in 32-bit, then sign-extend to 64
-            // ----------------------------
+            // W ops: compute in 32-bit then sign-extend to 64
             ALU_ADDW: begin
                 r32 = a32 + b32;
                 y   = {{32{r32[31]}}, r32};
@@ -67,12 +63,8 @@ module alu (
                 y   = {{32{r32[31]}}, r32};
             end
 
-            // ----------------------------
-            // Utility
-            // ----------------------------
-            ALU_PASS_A: y = a;
-
-            default: y = 64'd0;
+            default: y = 64'b0;
+            
         endcase
     end
 

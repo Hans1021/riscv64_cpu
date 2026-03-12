@@ -8,9 +8,9 @@ The project is developed incrementally.
 
 The CPU currently:
 
-- Implements **RV64I base ISA**
+- Implements **RV64I base ISA** + **M extension**
 - Uses a **multi-cycle architecture**
-- Boots and executes **bare-metal C programs**
+- Executes **bare-metal C programs**
 
 Development progress is tracked in milestone documents.
 
@@ -37,13 +37,15 @@ Use `gtkwave sim/dump.vcd` to view waveforms.
 
 ## Current ISA Support
 
-### ALU
+### ALU + MULDIV (M Extension)
 
 #### Registers
 
 `ADD SUB AND OR XOR`
 `SLL SRL SRA`
 `SLT SLTU`
+`MUL MULH MULHU MULHSU`
+`DIV DIVU REM REMU`
 
 #### Immediates
 
@@ -57,6 +59,8 @@ Use `gtkwave sim/dump.vcd` to view waveforms.
 `ADDW SUBQ`
 `SLLIW SRLIW SRAIW`
 `SLLW SRLW SRAW`
+`MULW`
+`DIVW DIVUW REMW REMUW`
 
 ### Loads / Stores
 
@@ -98,7 +102,7 @@ The CPU uses a multi-cycle architecture:
 
 ## Future Work
 
-- RV64 extensions
+- More RV64 extensions
 - Privileged ISA
 - FPGA
 - Pipelining

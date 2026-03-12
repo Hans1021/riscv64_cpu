@@ -6,7 +6,7 @@ module lsu (
 
     // Issue from control/FSM (one request at a time)
     input  logic        issue,
-    input  logic        is_store,        // 0=load, 1=store
+    input  logic        is_store,
     input  logic [63:0] addr,
     input  logic [63:0] store_data,      // rs2_data (unshifted)
     input  riscv_pkg::mem_size_t mem_size,
@@ -14,7 +14,7 @@ module lsu (
 
     output logic        busy,
     output logic        done,            // 1-cycle pulse when operation completes
-    output logic [63:0] load_data,       // valid when done && !is_store
+    output logic [63:0] load_data,
     output logic        err,             // pulse aligned with done
 
     // Unified bus (LSU drives when busy)
@@ -31,9 +31,7 @@ module lsu (
 );
     import riscv_pkg::*;
 
-    // ----------------------------
     // Helpers
-    // ----------------------------
     function automatic logic [7:0] size_mask(input mem_size_t sz);
         unique case (sz)
             MSZ_B: size_mask = 8'b0000_0001;
@@ -75,9 +73,8 @@ module lsu (
         endcase
     endfunction
 
-    // ----------------------------
+
     // Internal state
-    // ----------------------------
     typedef enum logic [1:0] { L_IDLE, L_REQ, L_WAIT } lstate_t;
     lstate_t ls_q, ls_d;
 
@@ -88,7 +85,6 @@ module lsu (
     logic [2:0]  addr_lo_q;
     logic [63:0] store_q;
 
-    // outputs
     always_comb begin
         busy      = (ls_q != L_IDLE);
         done      = 1'b0;
@@ -108,7 +104,7 @@ module lsu (
             L_IDLE: begin
                 if (issue) begin
                     if (is_misaligned(addr, mem_size)) begin
-                        // Immediate error completion (no bus transaction)
+                        // Immediate error
                         done = 1'b1;
                         err  = 1'b1;
                         ls_d = L_IDLE;
@@ -154,7 +150,6 @@ module lsu (
         endcase
     end
 
-    // latching request info on issue
     always_ff @(posedge clk) begin
         if (reset) begin
             ls_q           <= L_IDLE;

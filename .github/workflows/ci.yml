@@ -18,4 +18,5 @@ jobs:
 
       - name: Build and run CPU test
         run: |
-          make
+          make asm
+          make c
