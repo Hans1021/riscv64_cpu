@@ -53,7 +53,7 @@ module control_fsm (
     output logic [4:0]  rf_waddr,
     output logic [63:0] rf_wdata,
 
-    // CSR file
+    // CSR
     output logic [11:0] csr_raddr,
     input  logic [63:0] csr_rdata,
 
@@ -62,6 +62,15 @@ module control_fsm (
     output logic [63:0] csr_wdata,
 
     input  logic [11:0] csr_addr_d,
+
+    // Traps
+
+    output logic        trap_we,
+    output logic [63:0] trap_pc,
+    output logic [63:0] trap_cause,
+    output logic [63:0] trap_value,
+
+    input  logic [63:0] mtvec,
 
     // Debug
     output logic        halted,
@@ -76,6 +85,7 @@ module control_fsm (
         S_DECODE  = 4'd2,
         S_MEM     = 4'd3,
         S_EXEC    = 4'd4,
+        S_TRAP    = 4'd5,
         S_HALT    = 4'd15
     } state_t;
 
@@ -94,6 +104,10 @@ module control_fsm (
     
     // Temp CSR source
     logic [63:0] csr_src;
+
+    // Trap cause/value
+    logic [63:0] trap_cause_q, trap_cause_d;
+    logic [63:0] trap_value_q, trap_value_d;
 
     // EXU
     logic [63:0] exu_y;
@@ -207,6 +221,14 @@ module control_fsm (
         csr_waddr = csr_addr_q;
         csr_wdata = 64'd0;
 
+        trap_cause_d = trap_cause_q;
+        trap_value_d = trap_value_q;
+
+        trap_we    = 1'b0;
+        trap_pc    = 64'd0;
+        trap_cause = 64'd0;
+        trap_value = 64'd0;
+
         if (uop_q.csr_imm)
             csr_src = {59'd0, rs1_q_l};
         else
@@ -221,19 +243,33 @@ module control_fsm (
             S_IFETCH: begin
                 if (!if_busy) if_start = 1'b1;
                 if (if_done) begin
-                    if (if_err) st_d = S_HALT;
-                    else        st_d = S_DECODE;
+                    if (if_err) begin
+                        trap_cause_d = MCAUSE_INST_ACCESS_FAULT;
+                        trap_value_d = pc_q;
+                        st_d = S_TRAP;
+                    end else st_d = S_DECODE;
                 end
             end
 
             S_DECODE: begin
                 if (uop_d.kind == IK_ILLEGAL) begin
-                    st_d = S_HALT;
+                    trap_cause_d = MCAUSE_ILLEGAL_INST;
+                    trap_value_d = {32'd0, ir_q};
+                    st_d = S_TRAP;
                 end else if (uop_d.kind == IK_SYSTEM) begin
                     if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I || uop_d.csr_op != CSR_NONE)
-                    st_d = S_EXEC;
-                else
-                    st_d = S_HALT;
+                        st_d = S_EXEC;
+                    else if (uop_d.sys_op == SYS_EBREAK) begin
+                        trap_cause_d = MCAUSE_BREAKPOINT;
+                        trap_value_d = 64'd0;
+                        st_d = S_TRAP;
+                    end else if (uop_d.sys_op == SYS_ECALL) begin
+                        trap_cause_d = MCAUSE_ECALL;
+                        trap_value_d = 64'd0;
+                        st_d = S_TRAP;
+                    end else begin
+                        st_d = S_HALT;
+                    end
                 end else if (uop_d.kind == IK_LOAD || uop_d.kind == IK_STORE) begin
                     st_d = S_MEM;
                 end else begin
@@ -253,7 +289,13 @@ module control_fsm (
 
                 if (lsu_done) begin
                     if (lsu_err) begin
-                        st_d = S_HALT;
+                        if (uop_q.kind == IK_LOAD)
+                            trap_cause_d = MCAUSE_LOAD_ACCESS_FAULT;
+                        else
+                            trap_cause_d = MCAUSE_STORE_ACCESS_FAULT;
+
+                        trap_value_d = exu_y; // fault address
+                        st_d = S_TRAP;
                     end else begin
                         if (uop_q.kind == IK_LOAD && uop_q.reg_write) begin
                             rf_we    = 1'b1;
@@ -330,6 +372,18 @@ module control_fsm (
                 st_d = S_IFETCH;
             end
 
+            S_TRAP: begin
+                trap_we    = 1'b1;
+                trap_pc    = pc_q;
+                trap_cause = trap_cause_q;
+                trap_value = trap_value_q;
+
+                pc_we   = 1'b1;
+                pc_next = mtvec;
+
+                st_d    = S_IFETCH
+            end
+
             S_HALT: begin
                 halted = 1'b1;
                 st_d   = S_HALT;
@@ -356,8 +410,13 @@ module control_fsm (
             imm_j_q <= 64'd0;
 
             csr_addr_q <= 12'd0;
+            trap_cause_q <= 64'd0;
+            trap_value_q <= 64'd0;
+
         end else begin
             st_q <= st_d;
+            trap_cause_q <= trap_cause_d;
+            trap_value_q <= trap_value_d;
 
             if (st_q == S_DECODE) begin
                 uop_q   <= uop_d;

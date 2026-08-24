@@ -139,5 +139,13 @@ package riscv_pkg;
 		logic 		 csr_imm;
 	} dec_uop_t;
 
+	// Exception causes following RISCV ISA
+	localparam logic [63:0] MCAUSE_INST_ACCESS_FAULT = 64'd1;
+	localparam logic [63:0] MCAUSE_ILLEGAL_INST      = 64'd2;
+	localparam logic [63:0] MCAUSE_BREAKPOINT        = 64'd3;
+	localparam logic [63:0] MCAUSE_LOAD_ACCESS_FAULT = 64'd5;
+	localparam logic [63:0] MCAUSE_STORE_ACCESS_FAULT= 64'd7;
+	localparam logic [63:0] MCAUSE_ECALL             = 64'd11;
+
 endpackage
 `default_nettype wire

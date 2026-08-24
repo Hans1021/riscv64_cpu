@@ -206,6 +206,24 @@ module core_top #(
         .rf_waddr    (rf_waddr),
         .rf_wdata    (rf_wdata),
 
+        // CSR
+        .csr_addr_d (csr_addr),
+
+        .csr_raddr  (csr_raddr),
+        .csr_rdata  (csr_rdata),
+
+        .csr_we     (csr_we),
+        .csr_waddr  (csr_waddr),
+        .csr_wdata  (csr_wdata),
+
+        // Traps
+        .trap_we    (trap_we),
+        .trap_pc    (trap_pc),
+        .trap_cause (trap_cause),
+        .trap_value (trap_value),
+
+        .mtvec      (mtvec),
+
         // Debug
         .halted      (halted),
         .dbg_state   (dbg_state)
