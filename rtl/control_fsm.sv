@@ -53,6 +53,16 @@ module control_fsm (
     output logic [4:0]  rf_waddr,
     output logic [63:0] rf_wdata,
 
+    // CSR file
+    output logic [11:0] csr_raddr,
+    input  logic [63:0] csr_rdata,
+
+    output logic        csr_we,
+    output logic [11:0] csr_waddr,
+    output logic [63:0] csr_wdata,
+
+    input  logic [11:0] csr_addr_d,
+
     // Debug
     output logic        halted,
     output logic [3:0]  dbg_state
@@ -76,10 +86,14 @@ module control_fsm (
     dec_uop_t uop_q;
     logic [4:0]  rd_q_l, rs1_q_l, rs2_q_l;
     logic [63:0] imm_i_q, imm_s_q, imm_b_q, imm_u_q, imm_j_q;
+    logic [11:0] csr_addr_q;
 
     // Regfile read addrs from current IR
     assign rf_rs1_addr = rs1_d;
     assign rf_rs2_addr = rs2_d;
+    
+    // Temp CSR source
+    logic [63:0] csr_src;
 
     // EXU
     logic [63:0] exu_y;
@@ -187,6 +201,17 @@ module control_fsm (
         lsu_size       = uop_q.mem_size;
         lsu_unsigned   = uop_q.mem_unsigned;
 
+        // CSR defaults
+        csr_raddr = csr_addr_q;
+        csr_we    = 1'b0;
+        csr_waddr = csr_addr_q;
+        csr_wdata = 64'd0;
+
+        if (uop_q.csr_imm)
+            csr_src = {59'd0, rs1_q_l};
+        else
+            csr_src = rf_rs1_data;
+
         unique case (st_q)
             S_RESET: begin
                 st_d = S_IFETCH;
@@ -205,7 +230,7 @@ module control_fsm (
                 if (uop_d.kind == IK_ILLEGAL) begin
                     st_d = S_HALT;
                 end else if (uop_d.kind == IK_SYSTEM) begin
-                    if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I)
+                    if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I || uop_d.csr_op != CSR_NONE)
                     st_d = S_EXEC;
                 else
                     st_d = S_HALT;
@@ -241,8 +266,35 @@ module control_fsm (
             end
 
             S_EXEC: begin
-                // writeback for non-loads
-                if (uop_q.reg_write && uop_q.kind != IK_LOAD) begin
+                if (uop_q.csr_op != CSR_NONE) begin
+                    // old CSR value -> rd
+                    if (uop_q.reg_write) begin
+                        rf_we    = 1'b1;
+                        rf_waddr = rd_q_l;
+                        rf_wdata = csr_rdata;
+                    end
+
+                    // calculate new CSR value
+                    unique case (uop_q.csr_op)
+                        CSR_RW: begin
+                            csr_we    = 1'b1;
+                            csr_wdata = csr_src;
+                        end
+
+                        CSR_RS: begin
+                            csr_we    = (rs1_q_l != 5'd0);
+
+                            csr_wdata = csr_rdata | csr_src;
+                        end
+
+                        CSR_RC: begin
+                            csr_we    = (rs1_q_l != 5'd0);
+                            csr_wdata = csr_rdata & ~csr_src;
+                        end
+
+                        default: ;
+                    endcase
+                end else if (uop_q.reg_write && uop_q.kind != IK_LOAD) begin // writeback for non-loads
                     rf_we    = 1'b1;
                     rf_waddr = rd_q_l;
                     unique case (uop_q.wb_sel)
@@ -302,6 +354,8 @@ module control_fsm (
             imm_b_q <= 64'd0;
             imm_u_q <= 64'd0;
             imm_j_q <= 64'd0;
+
+            csr_addr_q <= 12'd0;
         end else begin
             st_q <= st_d;
 
@@ -316,6 +370,8 @@ module control_fsm (
                 imm_b_q <= imm_b_d;
                 imm_u_q <= imm_u_d;
                 imm_j_q <= imm_j_d;
+
+                csr_addr_q <= csr_addr_d;
             end
         end
     end

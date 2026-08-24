@@ -72,6 +72,7 @@ module core_top #(
     logic [2:0]  funct3;
     logic [6:0]  funct7;
     logic [63:0] imm_i, imm_s, imm_b, imm_u, imm_j;
+    logic [11:0] csr_addr;
 
     dec_uop_t uop;
 
@@ -90,6 +91,8 @@ module core_top #(
         .imm_b  (imm_b),
         .imm_u  (imm_u),
         .imm_j  (imm_j),
+
+        .csr_addr (csr_addr)
 
         .uop    (uop)
     );
@@ -112,6 +115,41 @@ module core_top #(
         .rd_wdata (rf_wdata),
         .rs1_data (rf_rs1_data),
         .rs2_data (rf_rs2_data)
+    );
+
+    // CSR file
+    logic [11:0] csr_raddr;
+    logic [63:0] csr_rdata;
+
+    logic        csr_we;
+    logic [11:0] csr_waddr;
+    logic [63:0] csr_wdata;
+
+    logic [63:0] mtvec;
+    logic [63:0] mepc;
+
+    logic        trap_we;
+    logic [63:0] trap_pc;
+    logic [63:0] trap_cause;
+    logic [63:0] trap_value;
+
+    csr_file u_csr (
+    .clk        (clk),
+    .reset      (reset),
+
+    .csr_raddr  (csr_raddr),
+    .csr_we     (csr_we),
+    .csr_waddr  (csr_waddr),
+    .csr_wdata  (csr_wdata),
+    .csr_rdata  (csr_rdata),
+
+    .trap_we    (trap_we),
+    .trap_pc    (trap_pc),
+    .trap_cause (trap_cause),
+    .trap_value (trap_value),
+
+    .mtvec      (mtvec),
+    .mepc       (mepc)
     );
 
     // Control FSM (arbitrates bus and controls FE/EXU/LSU)

@@ -5,6 +5,7 @@ module decoder (
 
     output logic [6:0]  opcode,
     output logic [4:0]  rd, rs1, rs2,
+    output logic [11:0] csr_addr,
     output logic [2:0]  funct3,
     output logic [6:0]  funct7,
 
@@ -49,19 +50,69 @@ module decoder (
         c.mem_size      = MSZ_W;
         c.mem_unsigned  = 1'b0;
 
+        c.csr_op  = CSR_NONE;
+        c.csr_imm = 1'b0;
+
         // Decode!
 
         // SYSTEM
         if (opcode_i == 7'b1110011) begin
-            if (funct3_i == 3'b000 && rd_i == 5'b0 && rs1_i == 5'b0) begin
-                if (inst_i[31:20] == 12'b0) begin
-                c.kind      = IK_SYSTEM;
-                c.sys_op    = SYS_ECALL;
-                end else if (inst_i[31:20] == 12'b1) begin
-                c.kind      = IK_SYSTEM;
-                c.sys_op    = SYS_EBREAK;
+            unique case (funct3_i)
+                3'b000: begin
+                    if (rd_i == 5'b0 && rs1_i == 5'b0) begin
+                        if (inst_i[31:20] == 12'b0) begin
+                            c.kind      = IK_SYSTEM;
+                            c.sys_op    = SYS_ECALL;
+                        end else if (inst_i[31:20] == 12'b1) begin
+                            c.kind      = IK_SYSTEM;
+                            c.sys_op    = SYS_EBREAK;
+                        end
+                    end
                 end
-            end
+
+                3'b001: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RW;
+                    c.csr_imm = 1'b0;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+                3'b010: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RS;
+                    c.csr_imm = 1'b0;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+                3'b011: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RC;
+                    c.csr_imm = 1'b0;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+                3'b101: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RW;
+                    c.csr_imm = 1'b1;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+                3'b110: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RS;
+                    c.csr_imm = 1'b1;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+                3'b111: begin
+                    c.kind    = IK_SYSTEM;
+                    c.csr_op  = CSR_RC;
+                    c.csr_imm = 1'b1;
+                    c.reg_write = (rd_i != 5'd0);
+                end
+
+            endcase
         end
 
         // FENCE / FENCE.I
@@ -73,6 +124,8 @@ module decoder (
                 c.kind   = IK_SYSTEM;
                 c.sys_op = SYS_FENCE_I;
             end
+
+
         end
 
         // LUI
@@ -356,12 +409,13 @@ module decoder (
     endfunction
 
     always_comb begin
-        opcode = inst[6:0];
-        rd     = inst[11:7];
-        funct3 = inst[14:12];
-        rs1    = inst[19:15];
-        rs2    = inst[24:20];
-        funct7 = inst[31:25];
+        opcode      = inst[6:0];
+        rd          = inst[11:7];
+        funct3      = inst[14:12];
+        rs1         = inst[19:15];
+        rs2         = inst[24:20];
+        funct7      = inst[31:25];
+        csr_addr    = inst[31:20];
 
         // Immediates
         imm_i = {{52{inst[31]}}, inst[31:20]};

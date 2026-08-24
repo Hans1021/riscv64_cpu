@@ -61,10 +61,10 @@ module csr_file (
             12'h343: csr_rdata = mtval_q;
             default: csr_rdata = 64'd0;
         endcase
-
-        mtvec   = mtvec_q
-        mepc    = mepc_q
     end
+
+    assign mtvec = mtvec_q;
+    assign mepc  = mepc_q;
 
 endmodule
 

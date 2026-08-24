@@ -9,6 +9,7 @@ RTL_SRCS := \
   $(RTL_DIR)/muldiv.sv \
   $(RTL_DIR)/control_fsm.sv \
   $(RTL_DIR)/core_top.sv \
+  $(RTL_DIR)/csr_file.sv \
   $(RTL_DIR)/decoder.sv \
   $(RTL_DIR)/exu.sv \
   $(RTL_DIR)/frontend.sv \
