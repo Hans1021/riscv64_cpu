@@ -92,7 +92,7 @@ module core_top #(
         .imm_u  (imm_u),
         .imm_j  (imm_j),
 
-        .csr_addr (csr_addr)
+        .csr_addr (csr_addr),
 
         .uop    (uop)
     );
@@ -223,6 +223,7 @@ module core_top #(
         .trap_value (trap_value),
 
         .mtvec      (mtvec),
+        .mepc       (mepc),
 
         // Debug
         .halted      (halted),

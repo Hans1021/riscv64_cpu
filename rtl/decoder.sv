@@ -66,6 +66,9 @@ module decoder (
                         end else if (inst_i[31:20] == 12'b1) begin
                             c.kind      = IK_SYSTEM;
                             c.sys_op    = SYS_EBREAK;
+                        end else if (inst_i[31:20] == 12'h302) begin
+                            c.kind      = IK_SYSTEM;
+                            c.sys_op    = SYS_MRET;
                         end
                     end
                 end
@@ -111,6 +114,8 @@ module decoder (
                     c.csr_imm = 1'b1;
                     c.reg_write = (rd_i != 5'd0);
                 end
+
+                default: ;
 
             endcase
         end

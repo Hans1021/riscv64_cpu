@@ -23,6 +23,7 @@ package riscv_pkg;
 		SYS_EBREAK,
 		SYS_FENCE,
 		SYS_FENCE_I
+		SYS_MRET
 	} sys_op_t;
 
 	typedef enum logic [2:0] {

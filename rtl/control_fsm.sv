@@ -71,6 +71,7 @@ module control_fsm (
     output logic [63:0] trap_value,
 
     input  logic [63:0] mtvec,
+    input  logic [63:0] mepc,
 
     // Debug
     output logic        halted,
@@ -257,7 +258,8 @@ module control_fsm (
                     trap_value_d = {32'd0, ir_q};
                     st_d = S_TRAP;
                 end else if (uop_d.kind == IK_SYSTEM) begin
-                    if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I || uop_d.csr_op != CSR_NONE)
+                    if (uop_d.sys_op == SYS_FENCE || uop_d.sys_op == SYS_FENCE_I ||
+                    uop_d.sys_op == SYS_MRET || uop_d.csr_op != CSR_NONE)
                         st_d = S_EXEC;
                     else if (uop_d.sys_op == SYS_EBREAK) begin
                         trap_cause_d = MCAUSE_BREAKPOINT;
@@ -267,6 +269,8 @@ module control_fsm (
                         trap_cause_d = MCAUSE_ECALL;
                         trap_value_d = 64'd0;
                         st_d = S_TRAP;
+                    end else if (uop_d.sys_op == SYS_MRET) begin
+                        st_d = S_EXEC;
                     end else begin
                         st_d = S_HALT;
                     end
@@ -346,30 +350,36 @@ module control_fsm (
                     endcase
                 end
 
-                // compute next PC
-                pc_we = 1'b1;
-                unique case (uop_q.pc_sel)
-                    PC_PC4: pc_next = pc_q + 64'd4;
+                if (uop_q.kind == IK_SYSTEM && uop_q.sys_op == SYS_MRET) begin
+                    // mret pc
+                    pc_we   = 1'b1;
+                    pc_next = mepc;
+                end else begin
+                    // compute next PC
+                    pc_we = 1'b1;
+                    unique case (uop_q.pc_sel)
+                        PC_PC4: pc_next = pc_q + 64'd4;
 
-                    PC_PC_IMM: begin
-                        if (uop_q.kind == IK_JAL) begin
-                            pc_next = pc_q + imm_j_q;
-                        end else if (uop_q.kind == IK_BRANCH) begin
-                            pc_next = exu_br_take ? (pc_q + imm_b_q) : (pc_q + 64'd4);
-                        end else begin
-                            pc_next = pc_q + 64'd4;
+                        PC_PC_IMM: begin
+                            if (uop_q.kind == IK_JAL) begin
+                                pc_next = pc_q + imm_j_q;
+                            end else if (uop_q.kind == IK_BRANCH) begin
+                                pc_next = exu_br_take ? (pc_q + imm_b_q) : (pc_q + 64'd4);
+                            end else begin
+                                pc_next = pc_q + 64'd4;
+                            end
                         end
-                    end
 
-                    PC_ALU: begin
-                        if (uop_q.kind == IK_JALR) pc_next = exu_jalr_target;
-                        else                       pc_next = exu_y;
-                    end
+                        PC_ALU: begin
+                            if (uop_q.kind == IK_JALR) pc_next = exu_jalr_target;
+                            else                       pc_next = exu_y;
+                        end
 
-                    default: pc_next = pc_q + 64'd4;
-                endcase
+                        default: pc_next = pc_q + 64'd4;
+                    endcase
 
                 st_d = S_IFETCH;
+                end
             end
 
             S_TRAP: begin
@@ -381,7 +391,7 @@ module control_fsm (
                 pc_we   = 1'b1;
                 pc_next = mtvec;
 
-                st_d    = S_IFETCH
+                st_d    = S_IFETCH;
             end
 
             S_HALT: begin
