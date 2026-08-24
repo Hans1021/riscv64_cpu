@@ -4,7 +4,7 @@ LD      := $(RISCV_PREFIX)ld
 OBJCOPY := $(RISCV_PREFIX)objcopy
 OBJDUMP := $(RISCV_PREFIX)objdump
 
-ISA := rv64im
+ISA := rv64im_zicsr
 
 OUTDIR := out
 PROG   := rv64_test

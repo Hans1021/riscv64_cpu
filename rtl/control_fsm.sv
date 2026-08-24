@@ -269,8 +269,6 @@ module control_fsm (
                         trap_cause_d = MCAUSE_ECALL;
                         trap_value_d = 64'd0;
                         st_d = S_TRAP;
-                    end else if (uop_d.sys_op == SYS_MRET) begin
-                        st_d = S_EXEC;
                     end else begin
                         st_d = S_HALT;
                     end

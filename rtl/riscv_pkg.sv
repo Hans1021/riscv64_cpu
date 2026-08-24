@@ -22,7 +22,7 @@ package riscv_pkg;
 		SYS_ECALL,
 		SYS_EBREAK,
 		SYS_FENCE,
-		SYS_FENCE_I
+		SYS_FENCE_I,
 		SYS_MRET
 	} sys_op_t;
 
