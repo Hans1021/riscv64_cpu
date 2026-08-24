@@ -1,6 +1,4 @@
-# Milestone 6: M Extension (done), more? (WIP)
-
-TLDR: M extension implemented, more to be done
+# Milestone 6: M Extension (Complete)
 
 ## Changelog
 

@@ -25,6 +25,13 @@ package riscv_pkg;
 		SYS_FENCE_I
 	} sys_op_t;
 
+	typedef enum logic [2:0] {
+		CSR_NONE,
+		CSR_RW,
+		CSR_RS,
+		CSR_RC
+	} csr_op_t;
+
 	// ALU ops
 	typedef enum logic [4:0] {
 		ALU_NONE,
@@ -116,6 +123,7 @@ package riscv_pkg;
 		alu_op_t     alu_op;
 		md_op_t      md_op;
 		sys_op_t     sys_op;
+		csr_op_t	 csr_op;
 		br_op_t      br_op;
 
 		srca_sel_t   srca_sel;
@@ -127,6 +135,8 @@ package riscv_pkg;
 
 		mem_size_t   mem_size;
 		logic        mem_unsigned;
+
+		logic 		 csr_imm;
 	} dec_uop_t;
 
 endpackage
