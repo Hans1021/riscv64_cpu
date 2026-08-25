@@ -91,6 +91,7 @@ See `docs/` for detailed descriptions
 - Milestone 3: Multi-cycle CPU skeleton
 - Milestone 4: RV64I implementation
 - Milestone 5: Run bare-metal C
+- Milestone 6: M Extention
 
 ## Design Overview
 
@@ -99,10 +100,3 @@ The CPU uses a multi-cycle architecture:
 `FETCH->DECODE->EXECUTE->MEMORY->WRITEBACK`
 
 - Single unified bus for instruction fetch and memory operations
-
-## Future Work
-
-- More RV64 extensions
-- Privileged ISA
-- FPGA
-- Pipelining

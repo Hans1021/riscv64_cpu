@@ -2,19 +2,45 @@
 .globl _start
 
 _start:
-    # Write 0x123 to mscratch
-    li      t0, 0x123
-    csrw    mscratch, t0
+    # Set trap handler address
+    la      t0, trap_handler
+    csrw    mtvec, t0
 
-    # Read it back
-    csrr    t1, mscratch
+    li      s0, 0
 
-    # Compare against expected value
-    li      t2, 0x123
-    bne     t1, t2, fail
+    # Trigger trap
+    ecall
+
+after_ecall:
+    # Handler should have changed s0 to 1
+    li      t0, 1
+    bne     s0, t0, fail
 
 pass:
     j pass
+
+
+trap_handler:
+    # Check mcause == 11 for ECALL
+    csrr    t0, mcause
+    li      t1, 11
+    bne     t0, t1, fail
+
+    # Check mtval == 0
+    csrr    t0, mtval
+    bnez    t0, fail
+
+    # Confirm handler ran
+    li      s0, 1
+
+    # mepc points to the ECALL itself.
+    # Skip over it before returning.
+    csrr    t0, mepc
+    addi    t0, t0, 4
+    csrw    mepc, t0
+
+    mret
+
 
 fail:
     j fail
