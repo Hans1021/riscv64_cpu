@@ -321,35 +321,34 @@ module control_fsm (
                         trap_cause_d = MCAUSE_ILLEGAL_INST;
                         trap_value_d = {32'd0, ir_q};
                         st_d = S_TRAP;
+                    end else begin
+                        if (uop_q.reg_write) begin
+                            rf_we    = 1'b1;
+                            rf_waddr = rd_q_l;
+                            rf_wdata = csr_rdata;
+                        end
+
+                        // calculate new CSR value
+                        unique case (uop_q.csr_op)
+                            CSR_RW: begin
+                                csr_we    = 1'b1;
+                                csr_wdata = csr_src;
+                            end
+
+                            CSR_RS: begin
+                                csr_we    = (rs1_q_l != 5'd0);
+
+                                csr_wdata = csr_rdata | csr_src;
+                            end
+
+                            CSR_RC: begin
+                                csr_we    = (rs1_q_l != 5'd0);
+                                csr_wdata = csr_rdata & ~csr_src;
+                            end
+
+                            default: ;
+                        endcase
                     end
-                    
-                    // old CSR value -> rd
-                    if (uop_q.reg_write) begin
-                        rf_we    = 1'b1;
-                        rf_waddr = rd_q_l;
-                        rf_wdata = csr_rdata;
-                    end
-
-                    // calculate new CSR value
-                    unique case (uop_q.csr_op)
-                        CSR_RW: begin
-                            csr_we    = 1'b1;
-                            csr_wdata = csr_src;
-                        end
-
-                        CSR_RS: begin
-                            csr_we    = (rs1_q_l != 5'd0);
-
-                            csr_wdata = csr_rdata | csr_src;
-                        end
-
-                        CSR_RC: begin
-                            csr_we    = (rs1_q_l != 5'd0);
-                            csr_wdata = csr_rdata & ~csr_src;
-                        end
-
-                        default: ;
-                    endcase
                 end else if (uop_q.reg_write && uop_q.kind != IK_LOAD) begin // writeback for non-loads
                     rf_we    = 1'b1;
                     rf_waddr = rd_q_l;
@@ -391,6 +390,7 @@ module control_fsm (
                 end
                 st_d = S_IFETCH;
             end
+
 
             S_TRAP: begin
                 trap_we    = 1'b1;

@@ -20,7 +20,7 @@ module csr_file (
 
     input logic mret_we,
     
-    output logic csr_valid;
+    output logic csr_valid
 );
 
     logic [63:0] mstatus_q;
@@ -35,9 +35,9 @@ module csr_file (
             mstatus_q   <= 64'b0;
             mtvec_q     <= 64'b0;
             mscratch_q  <= 64'b0;
-            mepc_q      <= trap_pc;
-            mcause_q    <= trap_cause;
-            mtval_q     <= trap_value;
+            mepc_q      <= 64'd0;
+            mcause_q    <= 64'd0;
+            mtval_q     <= 64'd0;
         end else if (trap_we) begin
             mepc_q      <= {trap_pc[63:2], 2'b00};  // Only 32-bit instructions
             mcause_q    <= trap_cause;
