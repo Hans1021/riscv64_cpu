@@ -73,9 +73,9 @@ module control_fsm (
     input  logic [63:0] mtvec,
     input  logic [63:0] mepc,
 
-    output logic mret_we;
+    output logic mret_we,
 
-    input logic csr_valid;
+    input logic csr_valid,
 
     // Debug
     output logic        halted,
@@ -316,12 +316,12 @@ module control_fsm (
             end
 
             S_EXEC: begin
-                if (uop_q.csr_op != CSR_NONE) begin
-                    if (!csr_valid) begin
+                if (uop_q.csr_op != CSR_NONE && !csr_valid) begin
                         trap_cause_d = MCAUSE_ILLEGAL_INST;
                         trap_value_d = {32'd0, ir_q};
                         st_d = S_TRAP;
-                    end else begin
+                end else begin
+                    if (uop_q.csr_op != CSR_NONE) begin
                         if (uop_q.reg_write) begin
                             rf_we    = 1'b1;
                             rf_waddr = rd_q_l;
@@ -348,47 +348,47 @@ module control_fsm (
 
                             default: ;
                         endcase
+                    end else if (uop_q.reg_write && uop_q.kind != IK_LOAD) begin // writeback for non-loads
+                        rf_we    = 1'b1;
+                        rf_waddr = rd_q_l;
+                        unique case (uop_q.wb_sel)
+                            WB_EXU:   rf_wdata = exu_y;
+                            WB_PC4:   rf_wdata = pc_q + 64'd4;
+                            default:  rf_wdata = 64'd0;
+                        endcase
                     end
-                end else if (uop_q.reg_write && uop_q.kind != IK_LOAD) begin // writeback for non-loads
-                    rf_we    = 1'b1;
-                    rf_waddr = rd_q_l;
-                    unique case (uop_q.wb_sel)
-                        WB_EXU:   rf_wdata = exu_y;
-                        WB_PC4:   rf_wdata = pc_q + 64'd4;
-                        default:  rf_wdata = 64'd0;
-                    endcase
-                end
 
-                if (uop_q.kind == IK_SYSTEM && uop_q.sys_op == SYS_MRET) begin
-                    mret_we = 1'b1;
-                    // mret pc
-                    pc_we   = 1'b1;
-                    pc_next = mepc;
-                end else begin
-                    // compute next PC
-                    pc_we = 1'b1;
-                    unique case (uop_q.pc_sel)
-                        PC_PC4: pc_next = pc_q + 64'd4;
+                    if (uop_q.kind == IK_SYSTEM && uop_q.sys_op == SYS_MRET) begin
+                        mret_we = 1'b1;
+                        // mret pc
+                        pc_we   = 1'b1;
+                        pc_next = mepc;
+                    end else begin
+                        // compute next PC
+                        pc_we = 1'b1;
+                        unique case (uop_q.pc_sel)
+                            PC_PC4: pc_next = pc_q + 64'd4;
 
-                        PC_PC_IMM: begin
-                            if (uop_q.kind == IK_JAL) begin
-                                pc_next = pc_q + imm_j_q;
-                            end else if (uop_q.kind == IK_BRANCH) begin
-                                pc_next = exu_br_take ? (pc_q + imm_b_q) : (pc_q + 64'd4);
-                            end else begin
-                                pc_next = pc_q + 64'd4;
+                            PC_PC_IMM: begin
+                                if (uop_q.kind == IK_JAL) begin
+                                    pc_next = pc_q + imm_j_q;
+                                end else if (uop_q.kind == IK_BRANCH) begin
+                                    pc_next = exu_br_take ? (pc_q + imm_b_q) : (pc_q + 64'd4);
+                                end else begin
+                                    pc_next = pc_q + 64'd4;
+                                end
                             end
-                        end
 
-                        PC_ALU: begin
-                            if (uop_q.kind == IK_JALR) pc_next = exu_jalr_target;
-                            else                       pc_next = exu_y;
-                        end
+                            PC_ALU: begin
+                                if (uop_q.kind == IK_JALR) pc_next = exu_jalr_target;
+                                else                       pc_next = exu_y;
+                            end
 
-                        default: pc_next = pc_q + 64'd4;
-                    endcase
+                            default: pc_next = pc_q + 64'd4;
+                        endcase
+                    end
+                    st_d = S_IFETCH;
                 end
-                st_d = S_IFETCH;
             end
 
 
