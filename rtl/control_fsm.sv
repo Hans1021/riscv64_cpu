@@ -375,9 +375,8 @@ module control_fsm (
 
                         default: pc_next = pc_q + 64'd4;
                     endcase
-
-                st_d = S_IFETCH;
                 end
+                st_d = S_IFETCH;
             end
 
             S_TRAP: begin
