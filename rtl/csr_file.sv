@@ -16,9 +16,11 @@ module csr_file (
     input logic [63:0]  trap_value,
 
     output logic [63:0] mtvec,
-    output logic [63:0] mepc
+    output logic [63:0] mepc,
 
-    input logic mret_we
+    input logic mret_we,
+    
+    output logic csr_valid;
 );
 
     logic [63:0] mstatus_q;
@@ -37,7 +39,7 @@ module csr_file (
             mcause_q    <= trap_cause;
             mtval_q     <= trap_value;
         end else if (trap_we) begin
-            mepc_q      <= trap_pc;
+            mepc_q      <= {trap_pc[63:2], 2'b00};  // Only 32-bit instructions
             mcause_q    <= trap_cause;
             mtval_q     <= trap_value;
                         
@@ -51,9 +53,9 @@ module csr_file (
         end else if (csr_we) begin
             case (csr_waddr)
                 12'h300: mstatus_q  <= csr_wdata;
-                12'h305: mtvec_q    <= csr_wdata;
+                12'h305: mtvec_q    <= {csr_wdata[63:2], 2'b00};
                 12'h340: mscratch_q <= csr_wdata;
-                12'h341: mepc_q     <= csr_wdata;
+                12'h341: mepc_q     <= {csr_wdata[63:2], 2'b00};
                 12'h342: mcause_q   <= csr_wdata;
                 12'h343: mtval_q    <= csr_wdata;
                 default: ;
@@ -62,6 +64,8 @@ module csr_file (
     end
 
     always_comb begin
+        csr_valid = 1'b1;
+
         case (csr_raddr)
             12'h300: csr_rdata = mstatus_q;
             12'h305: csr_rdata = mtvec_q;
@@ -69,7 +73,10 @@ module csr_file (
             12'h341: csr_rdata = mepc_q;
             12'h342: csr_rdata = mcause_q;
             12'h343: csr_rdata = mtval_q;
-            default: csr_rdata = 64'd0;
+            default: begin
+                csr_rdata = 64'd0;
+                csr_valid = 1'b0;
+            end
         endcase
     end
 

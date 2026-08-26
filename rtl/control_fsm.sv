@@ -75,6 +75,8 @@ module control_fsm (
 
     output logic mret_we;
 
+    input logic csr_valid;
+
     // Debug
     output logic        halted,
     output logic [3:0]  dbg_state
@@ -315,6 +317,12 @@ module control_fsm (
 
             S_EXEC: begin
                 if (uop_q.csr_op != CSR_NONE) begin
+                    if (!csr_valid) begin
+                        trap_cause_d = MCAUSE_ILLEGAL_INST;
+                        trap_value_d = {32'd0, ir_q};
+                        st_d = S_TRAP;
+                    end
+                    
                     // old CSR value -> rd
                     if (uop_q.reg_write) begin
                         rf_we    = 1'b1;

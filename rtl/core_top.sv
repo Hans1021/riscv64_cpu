@@ -133,6 +133,10 @@ module core_top #(
     logic [63:0] trap_cause;
     logic [63:0] trap_value;
 
+    logic mret_we;
+
+    logic csr_valid;
+
     csr_file u_csr (
     .clk        (clk),
     .reset      (reset),
@@ -149,7 +153,11 @@ module core_top #(
     .trap_value (trap_value),
 
     .mtvec      (mtvec),
-    .mepc       (mepc)
+    .mepc       (mepc),
+
+    .mret_we    (mret_we),
+
+    .csr_valid  (csr_valid)
     );
 
     // Control FSM (arbitrates bus and controls FE/EXU/LSU)
@@ -226,6 +234,8 @@ module core_top #(
         .mepc       (mepc),
         
         .mret_we    (mret_we),
+
+        .csr_valid  (csr_valid),
 
         // Debug
         .halted      (halted),
