@@ -73,6 +73,8 @@ module control_fsm (
     input  logic [63:0] mtvec,
     input  logic [63:0] mepc,
 
+    output logic mret_we;
+
     // Debug
     output logic        halted,
     output logic [3:0]  dbg_state
@@ -230,6 +232,8 @@ module control_fsm (
         trap_cause = 64'd0;
         trap_value = 64'd0;
 
+        mret_we = 1'b0;
+
         if (uop_q.csr_imm)
             csr_src = {59'd0, rs1_q_l};
         else
@@ -349,6 +353,7 @@ module control_fsm (
                 end
 
                 if (uop_q.kind == IK_SYSTEM && uop_q.sys_op == SYS_MRET) begin
+                    mret_we = 1'b1;
                     // mret pc
                     pc_we   = 1'b1;
                     pc_next = mepc;

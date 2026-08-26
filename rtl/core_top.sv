@@ -224,6 +224,8 @@ module core_top #(
 
         .mtvec      (mtvec),
         .mepc       (mepc),
+        
+        .mret_we    (mret_we),
 
         // Debug
         .halted      (halted),

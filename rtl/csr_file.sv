@@ -17,6 +17,8 @@ module csr_file (
 
     output logic [63:0] mtvec,
     output logic [63:0] mepc
+
+    input logic mret_we
 );
 
     logic [63:0] mstatus_q;
@@ -31,13 +33,21 @@ module csr_file (
             mstatus_q   <= 64'b0;
             mtvec_q     <= 64'b0;
             mscratch_q  <= 64'b0;
-            mepc_q      <= 64'b0;
-            mcause_q    <= 64'b0;
-            mtval_q     <= 64'b0;
+            mepc_q      <= trap_pc;
+            mcause_q    <= trap_cause;
+            mtval_q     <= trap_value;
         end else if (trap_we) begin
             mepc_q      <= trap_pc;
             mcause_q    <= trap_cause;
             mtval_q     <= trap_value;
+                        
+            mstatus_q[7]     <= mstatus_q[3]; // MPIE <- MIE
+            mstatus_q[3]     <= 1'b0;         // MIE <- 0
+            mstatus_q[12:11] <= 2'b11;        // MPP <- M
+        end else if (mret_we) begin
+            mstatus_q[3]     <= mstatus_q[7]; // MIE <- MPIE
+            mstatus_q[7]     <= 1'b1;         // MPIE <- 1
+            mstatus_q[12:11] <= 2'b11;
         end else if (csr_we) begin
             case (csr_waddr)
                 12'h300: mstatus_q  <= csr_wdata;
