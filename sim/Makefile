@@ -1,7 +1,12 @@
 TOP := top
 RTL_DIR := ../rtl
 SIM_DIR := .
+
 MEM ?= ../sw/bare_metal_c/out/prog.memh
+
+# Optional assembly-test result addresses
+PASS_PC ?=
+FAIL_PC ?=
 
 RTL_SRCS := \
   $(RTL_DIR)/riscv_pkg.sv \
@@ -19,13 +24,26 @@ RTL_SRCS := \
   $(RTL_DIR)/soc.sv \
   $(RTL_DIR)/top.sv
 
+RUN_ARGS := +mem=$(MEM)
+
+ifneq ($(strip $(PASS_PC)),)
+RUN_ARGS += +pass=$(PASS_PC)
+endif
+
+ifneq ($(strip $(FAIL_PC)),)
+RUN_ARGS += +fail=$(FAIL_PC)
+endif
+
+.PHONY: build run clean
+
 build:
 	verilator -Wall --cc $(RTL_SRCS) --top-module $(TOP) \
-		--exe $(SIM_DIR)/main.cpp --trace -Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY
+		--exe $(SIM_DIR)/main.cpp --trace \
+		-Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY
 	$(MAKE) -C obj_dir -f V$(TOP).mk
 
 run: build
-	./obj_dir/V$(TOP) +mem=$(MEM)
+	./obj_dir/V$(TOP) $(RUN_ARGS)
 
 clean:
 	rm -rf obj_dir dump.vcd

@@ -1,12 +1,10 @@
 .PHONY: c asm clean
 
 c:
-	$(MAKE) -C sw/bare_metal_c
-	$(MAKE) -C sim run MEM=../sw/bare_metal_c/out/prog.memh
+	$(MAKE) -C sw/bare_metal_c test
 
 asm:
-	$(MAKE) -C sw/asm
-	$(MAKE) -C sim run MEM=../sw/asm/out/rv64_test.memh
+	$(MAKE) -C sw/asm regression
 
 clean:
 	$(MAKE) -C sim clean

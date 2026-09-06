@@ -1,8 +1,10 @@
 RISCV_PREFIX := riscv64-unknown-elf-
+
 CC      := $(RISCV_PREFIX)gcc
 LD      := $(RISCV_PREFIX)ld
 OBJCOPY := $(RISCV_PREFIX)objcopy
 OBJDUMP := $(RISCV_PREFIX)objdump
+NM      := $(RISCV_PREFIX)nm
 
 ISA := rv64im
 
@@ -21,8 +23,19 @@ ELF    := $(OUTDIR)/$(PROG).elf
 MEMH   := $(OUTDIR)/$(PROG).memh
 DIS    := $(OUTDIR)/$(PROG).dis
 
-CFLAGS  := -march=$(ISA) -mabi=lp64 -mcmodel=medany -msmall-data-limit=0 -ffreestanding -fno-builtin -nostdlib -O2
+CFLAGS := \
+	-march=$(ISA) \
+	-mabi=lp64 \
+	-mcmodel=medany \
+	-msmall-data-limit=0 \
+	-ffreestanding \
+	-fno-builtin \
+	-nostdlib \
+	-O2
+
 LDFLAGS := -T $(LDS)
+
+.PHONY: all test clean
 
 all: $(MEMH) $(DIS)
 
@@ -39,10 +52,33 @@ $(ELF): $(CRT0_O) $(MAIN_O) $(LDS)
 	$(LD) $(LDFLAGS) $(CRT0_O) $(MAIN_O) -o $@
 
 $(MEMH): $(ELF)
-	$(OBJCOPY) -O verilog --verilog-data-width=8 --adjust-vma=-$(RESET_PC) $< $@
+	$(OBJCOPY) \
+		-O verilog \
+		--verilog-data-width=8 \
+		--adjust-vma=-$(RESET_PC) \
+		$< $@
 
 $(DIS): $(ELF)
 	$(OBJDUMP) -d $< > $@
+
+test: $(MEMH) $(DIS)
+	@PASS_PC=$$($(NM) $(ELF) | awk '$$3 == "pass" {print "0x" $$1}'); \
+	FAIL_PC=$$($(NM) $(ELF) | awk '$$3 == "fail" {print "0x" $$1}'); \
+	if [ -z "$$PASS_PC" ]; then \
+		echo "ERROR: no 'pass' symbol found"; \
+		exit 1; \
+	fi; \
+	if [ -z "$$FAIL_PC" ]; then \
+		echo "ERROR: no 'fail' symbol found"; \
+		exit 1; \
+	fi; \
+	echo "Running bare-metal C test"; \
+	echo "PASS_PC=$$PASS_PC"; \
+	echo "FAIL_PC=$$FAIL_PC"; \
+	$(MAKE) -C ../../sim run \
+		MEM=../sw/bare_metal_c/$(MEMH) \
+		PASS_PC=$$PASS_PC \
+		FAIL_PC=$$FAIL_PC
 
 clean:
 	rm -rf $(OUTDIR)
